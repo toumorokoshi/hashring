@@ -10,6 +10,9 @@ import (
 type HashKey uint32
 type HashKeyOrder []HashKey
 
+const MaxHashKey = ^HashKey(0)
+const MinHashKey = HashKey(0)
+
 func (h HashKeyOrder) Len() int           { return len(h) }
 func (h HashKeyOrder) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 func (h HashKeyOrder) Less(i, j int) bool { return h[i] < h[j] }
@@ -19,17 +22,32 @@ type HashRing struct {
 	sortedKeys []HashKey
 	nodes      []string
 	weights    map[string]int
+	nodePoints int  // the number of points that belong to a node, per weight.
 }
 
-func New(nodes []string) *HashRing {
+// a range represents a slice of the consistent hashing
+// section, per member
+type RingRange struct {
+	Node string
+	LowerBound HashKey
+	UpperBound HashKey
+}
+
+
+func NewWithNodePoints(nodes [] string, nodePoints int) *HashRing {
 	hashRing := &HashRing{
 		ring:       make(map[HashKey]string),
 		sortedKeys: make([]HashKey, 0),
 		nodes:      nodes,
 		weights:    make(map[string]int),
+		nodePoints: nodePoints,
 	}
 	hashRing.generateCircle()
 	return hashRing
+}
+
+func New(nodes []string) *HashRing {
+	return NewWithNodePoints(nodes, 40)
 }
 
 func NewWithWeights(weights map[string]int) *HashRing {
@@ -42,6 +60,7 @@ func NewWithWeights(weights map[string]int) *HashRing {
 		sortedKeys: make([]HashKey, 0),
 		nodes:      nodes,
 		weights:    weights,
+		nodePoints: 40,
 	}
 	hashRing.generateCircle()
 	return hashRing
@@ -91,7 +110,7 @@ func (h *HashRing) generateCircle() {
 			weight = h.weights[node]
 		}
 
-		factor := math.Floor(float64(40*len(h.nodes)*weight) / float64(totalWeight))
+		factor := math.Floor(float64(h.nodePoints * len(h.nodes) * weight) / float64(totalWeight))
 
 		for j := 0; j < int(factor); j++ {
 			nodeKey := fmt.Sprintf("%s-%d", node, j)
@@ -198,6 +217,7 @@ func (h *HashRing) AddWeightedNode(node string, weight int) *HashRing {
 		sortedKeys: make([]HashKey, 0),
 		nodes:      nodes,
 		weights:    weights,
+		nodePoints: h.nodePoints,
 	}
 	hashRing.generateCircle()
 	return hashRing
@@ -227,6 +247,7 @@ func (h *HashRing) UpdateWeightedNode(node string, weight int) *HashRing {
 		sortedKeys: make([]HashKey, 0),
 		nodes:      nodes,
 		weights:    weights,
+		nodePoints: h.nodePoints,
 	}
 	hashRing.generateCircle()
 	return hashRing
@@ -256,9 +277,26 @@ func (h *HashRing) RemoveNode(node string) *HashRing {
 		sortedKeys: make([]HashKey, 0),
 		nodes:      nodes,
 		weights:    weights,
+		nodePoints: h.nodePoints,
 	}
 	hashRing.generateCircle()
 	return hashRing
+}
+
+// return the ranges, in order, that each ring is
+// responsible for.
+func (h* HashRing) getRanges() []RingRange {
+	ranges := make([]RingRange, 0, len(h.sortedKeys) + 1)
+	lastKey := MinHashKey
+	firstNode := h.ring[h.sortedKeys[0]]
+	for _, key := range h.sortedKeys {
+		nextNode := h.ring[key]
+		ringRange := RingRange{nextNode, lastKey, key,}
+		ranges = append(ranges, ringRange)
+	}
+	// include the last node, which wraps around to 0
+	ranges = append(ranges, RingRange{firstNode, lastKey, MaxHashKey})
+	return ranges
 }
 
 func hashVal(bKey []byte) HashKey {

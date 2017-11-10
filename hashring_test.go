@@ -12,6 +12,12 @@ func expectNode(t *testing.T, hashRing *HashRing, key string, expectedNode strin
 	}
 }
 
+func expectEqual(t *testing.T, lhs int, rhs int) {
+	if lhs != rhs {
+		t.Error("Expected equal ", lhs, " == ", rhs)
+	}
+}
+
 func expectNodes(t *testing.T, hashRing *HashRing, key string, expectedNodes []string) {
 	nodes, ok := hashRing.GetNodes(key, 2)
 	sliceEquality := reflect.DeepEqual(nodes, expectedNodes)
@@ -347,6 +353,15 @@ func TestRemoveAddWeightedNode(t *testing.T) {
 	expectNodes(t, hashRing, "test5", []string{"b", "a"})
 	expectNodes(t, hashRing, "aaaa", []string{"b", "a"})
 	expectNodes(t, hashRing, "bbbb", []string{"a", "b"})
+}
+
+func TestGetRanges(t *testing.T) {
+	nodes := []string{"a", "b", "c"}
+	hashRing := NewWithNodePoints(nodes, 10)
+	ringRanges := hashRing.getRanges()
+	// 3 nodes * 10 points per node * 3 copies
+	// = 90
+	expectEqual(t, len(ringRanges), 91)
 }
 
 func TestAddRemoveNode(t *testing.T) {
