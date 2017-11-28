@@ -285,7 +285,7 @@ func (h *HashRing) RemoveNode(node string) *HashRing {
 
 // return the ranges, in order, that each ring is
 // responsible for.
-func (h* HashRing) getRanges() []RingRange {
+func (h* HashRing) GetRanges() []RingRange {
 	ranges := make([]RingRange, 0, len(h.sortedKeys) + 1)
 	lastKey := MinHashKey
 	firstNode := h.ring[h.sortedKeys[0]]

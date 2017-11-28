@@ -370,7 +370,7 @@ func TestRemoveAddWeightedNode(t *testing.T) {
 func TestGetRanges(t *testing.T) {
 	nodes := []string{"a", "b", "c"}
 	hashRing := NewWithNodePoints(nodes, 10)
-	ringRanges := hashRing.getRanges()
+	ringRanges := hashRing.GetRanges()
 	// 3 nodes * 10 points per node * 3 copies
 	// = 90
 	expectEqual(t, len(ringRanges), 91)
