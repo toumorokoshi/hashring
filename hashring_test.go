@@ -12,6 +12,18 @@ func expectNode(t *testing.T, hashRing *HashRing, key string, expectedNode strin
 	}
 }
 
+func expectRingRange(t *testing.T, l RingRange, r RingRange) {
+	if l.Node != r.Node {
+		t.Error("NodeName unequal: ", l.Node, " != ", r.Node)
+	}
+	if l.LowerBound != r.LowerBound {
+		t.Error("LowerBound unequal: ", l.LowerBound, " != ", r.LowerBound)
+	}
+	if l.UpperBound != r.UpperBound {
+		t.Error("UpperBound unequal: ", l.UpperBound, " != ", r.UpperBound)
+	}
+}
+
 func expectEqual(t *testing.T, lhs int, rhs int) {
 	if lhs != rhs {
 		t.Error("Expected equal ", lhs, " == ", rhs)
@@ -362,6 +374,10 @@ func TestGetRanges(t *testing.T) {
 	// 3 nodes * 10 points per node * 3 copies
 	// = 90
 	expectEqual(t, len(ringRanges), 91)
+	expectRingRange(t, ringRanges[0], RingRange{"c", 0, 500562})
+	expectRingRange(t, ringRanges[1], RingRange{"a", 500562, 3747649})
+	expectRingRange(t, ringRanges[len(ringRanges) - 1],
+										 RingRange{"c", 4290153535, 4294967295})
 }
 
 func TestAddRemoveNode(t *testing.T) {

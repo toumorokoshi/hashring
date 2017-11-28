@@ -293,6 +293,7 @@ func (h* HashRing) getRanges() []RingRange {
 		nextNode := h.ring[key]
 		ringRange := RingRange{nextNode, lastKey, key,}
 		ranges = append(ranges, ringRange)
+		lastKey = key
 	}
 	// include the last node, which wraps around to 0
 	ranges = append(ranges, RingRange{firstNode, lastKey, MaxHashKey})
